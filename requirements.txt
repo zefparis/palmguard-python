@@ -1,7 +1,8 @@
+# python-requires>=3.11,<3.13
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 gunicorn==22.0.0
-mediapipe==0.10.14
+mediapipe==0.10.33
 opencv-contrib-python-headless==4.10.0.84
 numpy==1.26.4
 ripser==0.6.8
