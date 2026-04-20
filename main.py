@@ -1,7 +1,4 @@
-import os
-os.environ['MEDIAPIPE_DISABLE_GPU'] = '1'
-os.environ['OPENCV_VIDEOIO_PRIORITY_MSMF'] = '0'
-os.environ['MESA_GL_VERSION_OVERRIDE'] = '3.3'
+import setup_env  # noqa: F401 — must be first import to set GL/GPU env vars
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

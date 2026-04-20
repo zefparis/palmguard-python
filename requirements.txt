@@ -9,4 +9,5 @@ ripser==0.6.8
 scipy==1.13.1
 pillow==10.4.0
 python-multipart==0.0.9
+scikit-image==0.24.0
 pydantic==2.8.2

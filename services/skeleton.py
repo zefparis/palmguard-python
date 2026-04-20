@@ -2,6 +2,7 @@ from typing import List
 
 import cv2
 import numpy as np
+from skimage.morphology import skeletonize as ski_skeletonize
 
 PALM_INDICES = [0, 1, 5, 9, 13, 17]
 ROI_SIZE = 256
@@ -36,8 +37,8 @@ def skeletonize(roi: np.ndarray) -> np.ndarray:
         cv2.THRESH_BINARY_INV,
         11, 2,
     )
-    skeleton = cv2.ximgproc.thinning(thresh, thinningType=cv2.ximgproc.THINNING_ZHANGSUEN)
-    return skeleton
+    skel = ski_skeletonize(thresh > 0)
+    return (skel.astype(np.uint8) * 255)
 
 
 def extract_line_segments(skeleton: np.ndarray, n: int = 4) -> List[np.ndarray]:
