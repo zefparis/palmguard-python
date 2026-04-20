@@ -1,11 +1,9 @@
 services:
   - type: web
     name: palmguard-python
-    runtime: python
+    runtime: docker
     region: frankfurt
     plan: starter
-    buildCommand: apt-get install -y libgles2-mesa libgles2-mesa-dev && pip install -r requirements.txt && python -c "import ctypes; ctypes.CDLL('libGLESv2.so.2')" || true
-    startCommand: bash -c "export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH && gunicorn main:app -w 2 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000"
     healthCheckPath: /health
     # keepAlive not supported in Render YAML — use UptimeRobot or similar
     # to ping https://palmguard-python.onrender.com/ping every 5 min
