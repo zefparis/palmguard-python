@@ -12,3 +12,7 @@ services:
         value: "3.11.0"
       - key: PORT
         value: "8000"
+      - key: MEDIAPIPE_DISABLE_GPU
+        value: "1"
+      - key: DISPLAY
+        value: ""

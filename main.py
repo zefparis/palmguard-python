@@ -1,3 +1,7 @@
+import os
+os.environ['MEDIAPIPE_DISABLE_GPU'] = '1'
+os.environ['MESA_GL_VERSION_OVERRIDE'] = '3.3'
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import biometric
