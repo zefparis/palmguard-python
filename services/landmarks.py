@@ -1,22 +1,44 @@
 import base64
+import os
+import urllib.request
 from typing import Optional
 
 import cv2
 import mediapipe as mp
 import numpy as np
+from mediapipe.tasks import python as mp_tasks
+from mediapipe.tasks.python import vision as mp_vision
+from mediapipe.tasks.python.core.base_options import BaseOptions
+from mediapipe.tasks.python.vision import HandLandmarker, HandLandmarkerOptions, RunningMode
 
-_hands: Optional[mp.solutions.hands.Hands] = None
+MODEL_URL = (
+    "https://storage.googleapis.com/mediapipe-models/"
+    "hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
+)
+MODEL_PATH = "/tmp/hand_landmarker.task"
 
 
-def _get_hands() -> mp.solutions.hands.Hands:
-    global _hands
-    if _hands is None:
-        _hands = mp.solutions.hands.Hands(
-            static_image_mode=True,
-            max_num_hands=1,
-            min_detection_confidence=0.7,
+def _download_model() -> None:
+    if not os.path.exists(MODEL_PATH):
+        urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
+
+
+_landmarker: Optional[HandLandmarker] = None
+
+
+def _get_landmarker() -> HandLandmarker:
+    global _landmarker
+    if _landmarker is None:
+        _download_model()
+        options = HandLandmarkerOptions(
+            base_options=BaseOptions(model_asset_path=MODEL_PATH),
+            running_mode=RunningMode.IMAGE,
+            num_hands=1,
+            min_hand_detection_confidence=0.7,
+            min_tracking_confidence=0.7,
         )
-    return _hands
+        _landmarker = HandLandmarker.create_from_options(options)
+    return _landmarker
 
 
 def decode_image(image_b64: str) -> np.ndarray:
@@ -30,22 +52,20 @@ def decode_image(image_b64: str) -> np.ndarray:
 
 def extract_landmarks(image_b64: str) -> dict:
     img = decode_image(image_b64)
-    rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    hands = _get_hands()
-    results = hands.process(rgb)
+    landmarker = _get_landmarker()
+    mp_image = mp.Image(
+        image_format=mp.ImageFormat.SRGB,
+        data=cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
+    )
+    result = landmarker.detect(mp_image)
 
-    if not results.multi_hand_landmarks:
+    if not result.hand_landmarks:
         raise ValueError("NO_HAND_DETECTED")
 
-    lm = results.multi_hand_landmarks[0]
-    landmarks = [{"x": p.x, "y": p.y, "z": p.z} for p in lm.landmark]
-
-    chirality = "Right"
-    confidence = 0.0
-    if results.multi_handedness:
-        h = results.multi_handedness[0].classification[0]
-        chirality = h.label
-        confidence = float(h.score)
+    lm = result.hand_landmarks[0]
+    landmarks = [{"x": p.x, "y": p.y, "z": p.z} for p in lm]
+    chirality = result.handedness[0][0].display_name
+    confidence = float(result.handedness[0][0].score)
 
     return {
         "landmarks": landmarks,
