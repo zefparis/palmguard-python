@@ -9,7 +9,7 @@ from services.pipeline import extract_palm_vector
 
 router = APIRouter(tags=["biometric"])
 
-THRESHOLD = 0.82
+THRESHOLD = 0.95
 
 
 @router.post("/extract", response_model=ExtractResponse)
@@ -21,7 +21,7 @@ async def extract(req: ExtractRequest):
             vector=result.vector.tolist(),
             landmarks_vec=result.landmarks_vec.tolist(),
             angles=result.angles.tolist(),
-            distances=result.distances.tolist(),
+            distances=result.extra_angles.tolist(),
             hand_detected=True,
             confidence=round(float(result.confidence), 4),
             chirality=result.chirality,
@@ -37,8 +37,8 @@ async def extract(req: ExtractRequest):
 
 @router.post("/compare", response_model=CompareResponse)
 async def compare(req: CompareRequest):
-    a = np.array(req.vector_a[12:], dtype=np.float32)
-    b = np.array(req.vector_b[12:], dtype=np.float32)
+    a = np.array(req.vector_a, dtype=np.float32)
+    b = np.array(req.vector_b, dtype=np.float32)
 
     norm_a, norm_b = float(np.linalg.norm(a)), float(np.linalg.norm(b))
     if norm_a < 1e-9 or norm_b < 1e-9:

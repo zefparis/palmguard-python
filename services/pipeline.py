@@ -4,54 +4,25 @@ from dataclasses import dataclass
 import numpy as np
 
 from .landmarks import extract_landmarks
-from .angles import procrustes_align, compute_angle_features
+from .angles import compute_angle_features, compute_inter_finger_angles
 
-VECTOR_DIM = 75  # landmarks[42] + angles[18] + distances[15]
-
-DISTANCE_PAIRS = [
-    (0, 9),   # wrist → middle base
-    (1, 4),   # thumb length
-    (5, 8),   # index finger length
-    (9, 12),  # middle finger length
-    (13, 16), # ring finger length
-    (17, 20), # pinky length
-    (5, 17),  # palm width: index→pinky base
-    (1, 17),  # thumb base→pinky base
-    (0, 5),   # wrist→index base
-    (0, 17),  # wrist→pinky base
-    (4, 8),   # thumb tip→index tip
-    (8, 12),  # index tip→middle tip
-    (12, 16), # middle tip→ring tip
-    (16, 20), # ring tip→pinky tip
-    (5, 9),   # index base→middle base
-]
+VECTOR_DIM = 27  # angles[18] + inter_finger_angles[9] — fully scale/distance/rotation invariant
 
 
 @dataclass
 class PalmVectorResult:
-    vector: np.ndarray        # [75] float32
-    landmarks_vec: np.ndarray # [42] Procrustes-aligned (x,y) × 21
-    angles: np.ndarray        # [18]
-    distances: np.ndarray     # [15] normalised inter-landmark distances
+    vector: np.ndarray        # [27] float32 — angles only
+    landmarks_vec: np.ndarray # [42] zeros — kept for schema compatibility
+    angles: np.ndarray        # [18] finger-chain angles
+    extra_angles: np.ndarray  # [9]  inter-finger spread angles
     chirality: str
     confidence: float
     processing_ms: float
 
 
-def compute_distance_features(pts: np.ndarray) -> np.ndarray:
-    dists = np.array(
-        [float(np.linalg.norm(pts[a] - pts[b])) for a, b in DISTANCE_PAIRS],
-        dtype=np.float32,
-    )
-    ref = float(np.linalg.norm(pts[0] - pts[9]))
-    if ref > 1e-9:
-        dists /= ref
-    return dists
-
-
 def compare_vectors(a: list, b: list) -> float:
-    va = np.array(a[12:], dtype=np.float32)
-    vb = np.array(b[12:], dtype=np.float32)
+    va = np.array(a, dtype=np.float32)
+    vb = np.array(b, dtype=np.float32)
     norm_a = np.linalg.norm(va)
     norm_b = np.linalg.norm(vb)
     cosine = float(np.dot(va, vb) / (norm_a * norm_b)) if norm_a > 1e-9 and norm_b > 1e-9 else 0.0
@@ -66,27 +37,23 @@ def extract_palm_vector(image_b64: str) -> PalmVectorResult:
     lm_result = extract_landmarks(image_b64)
     landmarks = lm_result["landmarks"]
 
-    # 2. Procrustes-aligned (x,y) coords → [42]
-    pts = procrustes_align(landmarks)  # (21, 2) float32
-    landmarks_vec = pts.flatten()
-
-    # 3. Angle features [18]
+    # 2. Finger-chain joint angles (18) — scale/rotation invariant via Procrustes
     angles = compute_angle_features(landmarks)
 
-    # 4. Normalised inter-landmark distances [15]
-    distances = compute_distance_features(pts)
+    # 3. Inter-finger spread angles (9) — same invariance
+    extra_angles = compute_inter_finger_angles(landmarks)
 
-    # 5. Concatenate → [75]
-    combined = np.concatenate([landmarks_vec, angles, distances]).astype(np.float32)
+    # 4. Concatenate → [27] angles only
+    combined = np.concatenate([angles, extra_angles]).astype(np.float32)
     assert len(combined) == VECTOR_DIM, f"Vector length mismatch: {len(combined)} != {VECTOR_DIM}"
 
     ms = (time.monotonic() - t0) * 1000.0
 
     return PalmVectorResult(
         vector=combined,
-        landmarks_vec=landmarks_vec,
+        landmarks_vec=np.zeros(42, dtype=np.float32),
         angles=angles,
-        distances=distances,
+        extra_angles=extra_angles,
         chirality=lm_result["chirality"],
         confidence=lm_result["confidence"],
         processing_ms=ms,

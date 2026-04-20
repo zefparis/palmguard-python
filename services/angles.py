@@ -31,6 +31,29 @@ def compute_angle(a: np.ndarray, b: np.ndarray, c: np.ndarray) -> float:
     return float(np.arccos(np.clip(np.dot(v1, v2) / (n1 * n2), -1.0, 1.0)))
 
 
+INTER_FINGER_TRIPLES = [
+    (1,  0,  5),   # thumb-base  ↔ index-base  spread at wrist
+    (5,  0,  9),   # index-base  ↔ middle-base spread at wrist
+    (9,  0, 13),   # middle-base ↔ ring-base   spread at wrist
+    (13, 0, 17),   # ring-base   ↔ pinky-base  spread at wrist
+    (4,  0,  8),   # thumb-tip   ↔ index-tip   spread at wrist
+    (8,  0, 12),   # index-tip   ↔ middle-tip  spread at wrist
+    (12, 0, 16),   # middle-tip  ↔ ring-tip    spread at wrist
+    (16, 0, 20),   # ring-tip    ↔ pinky-tip   spread at wrist
+    (5,  9, 17),   # palm arch: index-base ↔ pinky-base at middle-base
+]
+
+
+def compute_inter_finger_angles(landmarks: List[dict]) -> np.ndarray:
+    if not landmarks or len(landmarks) < 21:
+        return np.zeros(9, dtype=np.float32)
+    pts = procrustes_align(landmarks)
+    return np.array(
+        [compute_angle(pts[a], pts[b], pts[c]) for a, b, c in INTER_FINGER_TRIPLES],
+        dtype=np.float32,
+    )
+
+
 def compute_angle_features(landmarks: List[dict]) -> np.ndarray:
     if not landmarks or len(landmarks) < 21:
         return np.zeros(18, dtype=np.float32)
