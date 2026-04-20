@@ -18,3 +18,7 @@ services:
         value: ""
       - key: LIBGL_ALWAYS_SOFTWARE
         value: "1"
+      - key: GALLIUM_DRIVER
+        value: softpipe
+      - key: EGL_PLATFORM
+        value: surfaceless
