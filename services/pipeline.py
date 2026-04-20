@@ -49,6 +49,16 @@ def compute_distance_features(pts: np.ndarray) -> np.ndarray:
     return dists
 
 
+def compare_vectors(a: list, b: list) -> float:
+    va = np.array(a[12:], dtype=np.float32)
+    vb = np.array(b[12:], dtype=np.float32)
+    norm_a = np.linalg.norm(va)
+    norm_b = np.linalg.norm(vb)
+    cosine = float(np.dot(va, vb) / (norm_a * norm_b)) if norm_a > 1e-9 and norm_b > 1e-9 else 0.0
+    l2_sim = float(1 / (1 + np.linalg.norm(va - vb)))
+    return float(0.6 * cosine + 0.4 * l2_sim)
+
+
 def extract_palm_vector(image_b64: str) -> PalmVectorResult:
     t0 = time.monotonic()
 
