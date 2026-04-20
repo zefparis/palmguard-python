@@ -15,6 +15,9 @@ COPY . .
 
 ENV LIBGL_ALWAYS_SOFTWARE=1
 ENV MEDIAPIPE_DISABLE_GPU=1
+ENV GALLIUM_DRIVER=softpipe
 ENV PORT=8000
 
-CMD gunicorn main:app -w 2 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+EXPOSE 8000
+
+CMD ["gunicorn", "main:app", "-w", "2", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
