@@ -26,12 +26,18 @@ async def startup_event():
     os.environ['MEDIAPIPE_DISABLE_GPU'] = '1'
     os.environ['GALLIUM_DRIVER'] = 'softpipe'
     os.environ['EGL_PLATFORM'] = 'surfaceless'
-    from services.landmarks import _get_landmarker
+    import services.landmarks as lm_mod
     try:
-        _get_landmarker()
+        lm_mod._get_landmarker()
         print("[palmguard-python] MediaPipe pre-warmed \u2713")
     except Exception as e:
-        print(f"[palmguard-python] Pre-warm warning: {e}")
+        err = str(e)
+        if lm_mod._landmarker is not None:
+            print(f"[palmguard-python] MediaPipe pre-warmed \u2713 (GL stub unavailable — CPU-only mode)")
+        elif "libGLESv2" in err or "libGL" in err:
+            print(f"[palmguard-python] GL library missing ({err}) — MediaPipe will init on first request (CPU-only)")
+        else:
+            print(f"[palmguard-python] Pre-warm failed: {e}")
 
 
 @app.get("/health")
