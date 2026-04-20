@@ -19,10 +19,9 @@ async def extract(req: ExtractRequest):
         return ExtractResponse(
             success=True,
             vector=result.vector.tolist(),
-            fractal=result.fractal.tolist(),
-            tda=result.tda.tolist(),
+            landmarks_vec=result.landmarks_vec.tolist(),
             angles=result.angles.tolist(),
-            hu_moments=result.hu_moments.tolist(),
+            distances=result.distances.tolist(),
             hand_detected=True,
             confidence=round(float(result.confidence), 4),
             chirality=result.chirality,

@@ -20,4 +20,4 @@ def test_extract_palm_vector_no_hand_raises():
 
 
 def test_vector_dim_constant():
-    assert VECTOR_DIM == 74
+    assert VECTOR_DIM == 75

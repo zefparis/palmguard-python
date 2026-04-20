@@ -10,10 +10,9 @@ class ExtractRequest(BaseModel):
 class ExtractResponse(BaseModel):
     success: bool
     vector: Optional[List[float]] = None
-    fractal: Optional[List[float]] = None
-    tda: Optional[List[float]] = None
+    landmarks_vec: Optional[List[float]] = None
     angles: Optional[List[float]] = None
-    hu_moments: Optional[List[float]] = None
+    distances: Optional[List[float]] = None
     hand_detected: bool = False
     confidence: Optional[float] = None
     chirality: Optional[str] = None

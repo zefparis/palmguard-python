@@ -9,6 +9,10 @@ MAX_PTS = 64
 OUT_DIM = 32
 
 
+def extract_nodes_from_landmarks(landmarks: list) -> np.ndarray:
+    return np.array([[lm["x"], lm["y"]] for lm in landmarks], dtype=np.float32)
+
+
 def extract_nodes(skeleton: np.ndarray) -> np.ndarray:
     binary = (skeleton > 0).astype(np.uint8)
     neighbor_counts = convolve(binary, KERNEL, mode="constant", cval=0)
