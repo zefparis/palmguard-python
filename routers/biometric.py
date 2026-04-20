@@ -9,7 +9,7 @@ from services.pipeline import extract_palm_vector
 
 router = APIRouter(tags=["biometric"])
 
-THRESHOLD = 0.88
+THRESHOLD = 0.82
 
 
 @router.post("/extract", response_model=ExtractResponse)
