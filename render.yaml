@@ -2,14 +2,14 @@ services:
   - type: web
     name: palmguard-python
     runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     region: frankfurt
     plan: starter
     healthCheckPath: /health
     # keepAlive not supported in Render YAML — use UptimeRobot or similar
     # to ping https://palmguard-python.onrender.com/ping every 5 min
     envVars:
-      - key: PYTHON_VERSION
-        value: "3.11.0"
       - key: PORT
         value: "8000"
       - key: MEDIAPIPE_DISABLE_GPU
