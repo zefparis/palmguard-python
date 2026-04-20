@@ -1,16 +1,18 @@
 import base64
+import io
 
-import cv2
 import numpy as np
 import pytest
+from PIL import Image as PILImage
 
 from services.pipeline import extract_palm_vector, VECTOR_DIM
 
 
 def _make_blank_image_b64() -> str:
-    img = np.zeros((480, 640, 3), dtype=np.uint8)
-    _, buf = cv2.imencode(".jpg", img)
-    return base64.b64encode(buf).decode()
+    img = PILImage.fromarray(np.zeros((480, 640, 3), dtype=np.uint8), mode='RGB')
+    buf = io.BytesIO()
+    img.save(buf, format='JPEG')
+    return base64.b64encode(buf.getvalue()).decode()
 
 
 def test_extract_palm_vector_no_hand_raises():

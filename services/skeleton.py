@@ -1,7 +1,9 @@
 from typing import List
 
-import cv2
 import numpy as np
+from PIL import Image as PILImage
+from scipy.ndimage import gaussian_filter
+from scipy.ndimage import label as nd_label
 from skimage.morphology import skeletonize as ski_skeletonize
 
 PALM_INDICES = [0, 1, 5, 9, 13, 17]
@@ -25,33 +27,31 @@ def crop_palm_roi(image: np.ndarray, landmarks: List[dict], size: int = ROI_SIZE
     roi = image[y1:y2, x1:x2]
     if roi.size == 0:
         roi = image
-    gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) if len(roi.shape) == 3 else roi
-    return cv2.resize(gray, (size, size))
+    if len(roi.shape) == 3:
+        gray = (0.299 * roi[:, :, 0] + 0.587 * roi[:, :, 1] + 0.114 * roi[:, :, 2]).astype(np.uint8)
+    else:
+        gray = roi.astype(np.uint8)
+    return np.array(PILImage.fromarray(gray).resize((size, size), PILImage.LANCZOS))
 
 
 def skeletonize(roi: np.ndarray) -> np.ndarray:
-    blurred = cv2.GaussianBlur(roi, (5, 5), 0)
-    thresh = cv2.adaptiveThreshold(
-        blurred, 255,
-        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY_INV,
-        11, 2,
-    )
+    blurred = gaussian_filter(roi.astype(np.float64), sigma=1.1)
+    local_mean = gaussian_filter(blurred, sigma=11 / 6.0)
+    thresh = ((local_mean - blurred) > 2.0).astype(np.uint8) * 255
     skel = ski_skeletonize(thresh > 0)
     return (skel.astype(np.uint8) * 255)
 
 
 def extract_line_segments(skeleton: np.ndarray, n: int = 4) -> List[np.ndarray]:
-    n_labels, labels, stats, _ = cv2.connectedComponentsWithStats(skeleton, connectivity=8)
-    order = sorted(
-        range(1, n_labels),
-        key=lambda l: stats[l, cv2.CC_STAT_AREA],
-        reverse=True,
-    )
+    labeled, n_labels = nd_label(skeleton > 0)
+    if n_labels == 0:
+        return [np.zeros_like(skeleton)] * n
+    areas = np.bincount(labeled.ravel())
+    order = sorted(range(1, n_labels + 1), key=lambda i: areas[i], reverse=True)
     lines = []
-    for label_idx in order[:n]:
+    for idx in order[:n]:
         mask = np.zeros_like(skeleton)
-        mask[labels == label_idx] = 255
+        mask[labeled == idx] = 255
         lines.append(mask)
     while len(lines) < n:
         lines.append(np.zeros_like(skeleton))

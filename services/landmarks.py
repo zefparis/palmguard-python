@@ -7,12 +7,13 @@ os.environ['OPENCV_VIDEOIO_PRIORITY_MSMF'] = '0'
 os.environ['EGL_PLATFORM'] = 'surfaceless'
 
 import base64
+import io
 import urllib.request
 from typing import Optional
 
-import cv2
 import mediapipe as mp
 import numpy as np
+from PIL import Image as PILImage
 from mediapipe.tasks import python as mp_tasks
 from mediapipe.tasks.python import vision as mp_vision
 from mediapipe.tasks.python.core.base_options import BaseOptions
@@ -50,19 +51,19 @@ def _get_landmarker() -> HandLandmarker:
 
 def decode_image(image_b64: str) -> np.ndarray:
     data = base64.b64decode(image_b64)
-    arr = np.frombuffer(data, dtype=np.uint8)
-    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
-    if img is None:
+    try:
+        img = PILImage.open(io.BytesIO(data)).convert('RGB')
+        return np.array(img)
+    except Exception:
         raise ValueError("Failed to decode image — invalid base64 or unsupported format")
-    return img
 
 
 def extract_landmarks(image_b64: str) -> dict:
-    img = decode_image(image_b64)
+    img_array = decode_image(image_b64)  # already RGB
     landmarker = _get_landmarker()
     mp_image = mp.Image(
         image_format=mp.ImageFormat.SRGB,
-        data=cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
+        data=img_array,
     )
     result = landmarker.detect(mp_image)
 
@@ -78,5 +79,4 @@ def extract_landmarks(image_b64: str) -> dict:
         "landmarks": landmarks,
         "chirality": chirality,
         "confidence": confidence,
-        "image": img,
     }

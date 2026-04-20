@@ -1,16 +1,18 @@
 import base64
+import io
 
-import cv2
 import numpy as np
 import pytest
+from PIL import Image as PILImage
 
 from services.landmarks import decode_image, extract_landmarks
 
 
 def _make_blank_image_b64(w: int = 320, h: int = 240) -> str:
-    img = np.zeros((h, w, 3), dtype=np.uint8)
-    _, buf = cv2.imencode(".jpg", img)
-    return base64.b64encode(buf).decode()
+    img = PILImage.fromarray(np.zeros((h, w, 3), dtype=np.uint8), mode='RGB')
+    buf = io.BytesIO()
+    img.save(buf, format='JPEG')
+    return base64.b64encode(buf.getvalue()).decode()
 
 
 def test_decode_image_returns_ndarray():
