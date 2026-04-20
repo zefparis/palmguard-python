@@ -1,5 +1,8 @@
-import base64
 import os
+os.environ['MEDIAPIPE_DISABLE_GPU'] = '1'
+os.environ['OPENCV_VIDEOIO_PRIORITY_MSMF'] = '0'
+
+import base64
 import urllib.request
 from typing import Optional
 
