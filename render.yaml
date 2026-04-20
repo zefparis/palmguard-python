@@ -16,3 +16,5 @@ services:
         value: "1"
       - key: DISPLAY
         value: ""
+      - key: LIBGL_ALWAYS_SOFTWARE
+        value: "1"
